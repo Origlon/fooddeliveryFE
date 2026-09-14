@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+
+import { server } from "@/app/_api/api";
 
 import StepOne from "./_features/step-one";
 import StepTwo from "./_features/step-two";
@@ -29,13 +32,6 @@ const signupSchema = z
       ),
 
     confirmPassword: z.string().min(1, "Please confirm your password"),
-
-    phone: z
-      .string()
-      .trim()
-      .min(1, "Phone is required")
-      .regex(/^\d+$/, "Phone must contain only numbers")
-      .length(8, "Phone must be 8 digits"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -43,7 +39,10 @@ const signupSchema = z
   });
 
 export default function SignupPage() {
+  const router = useRouter();
+
   const [step, setStep] = useState(1);
+  const [serverError, setServerError] = useState("");
 
   const {
     register,
@@ -65,17 +64,34 @@ export default function SignupPage() {
 
     if (!isValid) return;
 
+    setServerError("");
     setStep(2);
   };
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
+    setServerError("");
+
     const { confirmPassword, ...signupData } = data;
 
-    console.log("Signup data:", signupData);
+    try {
+      await server.post("/auth/sign-up", signupData);
+
+      router.push("/login");
+    } catch (error) {
+      setServerError(
+        error.response?.data?.message || "Signup failed. Please try again.",
+      );
+    }
   };
 
   return (
     <>
+      {serverError && (
+        <p role="alert" className="px-6 pt-4 text-center text-sm text-red-500">
+          {serverError}
+        </p>
+      )}
+
       {step === 1 && (
         <StepOne register={register} errors={errors} onNext={nextStep} />
       )}
@@ -85,7 +101,10 @@ export default function SignupPage() {
           register={register}
           errors={errors}
           handleSubmit={handleSubmit}
-          onBack={() => setStep(1)}
+          onBack={() => {
+            setServerError("");
+            setStep(1);
+          }}
           onSubmit={onSubmit}
         />
       )}

@@ -93,27 +93,7 @@ export default function StepTwo({
                   Show password
                 </Label>
               </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone"></Label>
-
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="Enter your phone number"
-                {...register("phone")}
-                className={
-                  errors.phone
-                    ? "border-destructive focus-visible:ring-destructive"
-                    : ""
-                }
-              />
-
-              {errors.phone && (
-                <p className="text-sm text-destructive">
-                  {errors.phone.message}
-                </p>
-              )}
-            </div>
+        
 
             <Button type="submit" className="h-10 w-full">
               Lets go
