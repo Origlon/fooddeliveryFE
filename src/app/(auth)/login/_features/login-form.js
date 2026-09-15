@@ -1,5 +1,5 @@
 "use client";
-
+import { useAuth } from "@/providers/auth-provider";
 import { useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff, ChevronLeft } from "lucide-react";
@@ -35,6 +35,7 @@ const loginSchema = z.object({
 });
 
 export default function LoginForm() {
+  const { login } = useAuth();
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState("");
@@ -58,32 +59,18 @@ export default function LoginForm() {
     clearMessages();
 
     try {
-      const response = await server.post(
-        "/auth/login",
-        { email: data.email, password: data.password },
-      
-      );
+      const response = await server.post("/auth/login", {
+        email: data.email,
+        password: data.password,
+      });
 
-      if (!response.data?.user?.email) {
-        setServerError("Unexpected server response");
-        return;
-      }
-
-      setSuccessMessage("Email and password verified successfully.");
+      login(response.data.user);
     } catch (error) {
-      const message = error.response?.data?.message;
-
-      if (typeof message === "string") {
-        setServerError(message);
-      } else if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
-        setServerError("Request timed out. Please try again.");
-      } else if (error.response) {
-        setServerError("Login failed. Please try again.");
-      } else {
-        setServerError(
-          "Cannot connect to the server. Check that the back-end is running.",
-        );
-      }
+      setServerError(
+        error.response?.data?.message ||
+          error.message ||
+          "Login failed. Please try again.",
+      );
     }
   };
 
